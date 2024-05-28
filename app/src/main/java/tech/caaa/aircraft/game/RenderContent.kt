@@ -7,6 +7,9 @@ sealed class Renderable {
     class HeroAircraft(override val hitbox: Rect) : Renderable()
     class HeroBullet(override val hitbox: Rect) : Renderable()
     class CommonEnemy(override val hitbox: Rect) : Renderable()
+    class BloodItem(override val hitbox: Rect) : Renderable()
+    class BombItem(override val hitbox: Rect) : Renderable()
+    class BulletItem(override val hitbox: Rect) : Renderable()
 }
 
 enum class Background {

@@ -1,8 +1,8 @@
 package tech.caaa.aircraft.common
 
 interface Movable {
-    var x: Float
-    var y: Float
+    var x: Double
+    var y: Double
     fun move()
     fun onOutScreen()
 }

@@ -74,8 +74,6 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
                 drawRenderable(canvas, obj)
             }
 
-            val paint = Paint().apply { color=Color.BLACK; textSize = 160F }
-            canvas.drawText("test", 160F,160F,paint)
         } finally {
             if(canvas != null)
                 holder.unlockCanvasAndPost(canvas)
@@ -104,6 +102,9 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
             is Renderable.CommonEnemy -> R.drawable.mob
             is Renderable.HeroAircraft -> R.drawable.hero
             is Renderable.HeroBullet -> R.drawable.bullet_hero
+            is Renderable.BloodItem -> R.drawable.prop_blood
+            is Renderable.BombItem -> R.drawable.prop_bomb
+            is Renderable.BulletItem -> R.drawable.prop_bullet
         }
     }
     private val resourceMap = mutableMapOf<Int, Bitmap>()

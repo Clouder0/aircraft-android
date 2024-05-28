@@ -4,7 +4,7 @@ import android.util.Log
 import tech.caaa.aircraft.bullets.BaseBullet
 
 typealias shootFunc = () -> List<BaseBullet>
-typealias regularShootFunc = (x: Float, y: Float, spdX: Float, spdY: Float) -> List<BaseBullet>
+typealias regularShootFunc = (x: Double, y: Double, spdX: Double, spdY: Double) -> List<BaseBullet>
 
 
 // shoot per <period> ticks

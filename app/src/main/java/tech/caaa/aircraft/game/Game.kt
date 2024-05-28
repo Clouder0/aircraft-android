@@ -1,6 +1,5 @@
 package tech.caaa.aircraft.game
 
-import android.graphics.Rect
 import android.util.Log
 import tech.caaa.aircraft.aircrafts.BaseEnemy
 import tech.caaa.aircraft.aircrafts.CommonEnemy
@@ -13,6 +12,10 @@ import tech.caaa.aircraft.aircrafts.singleGenWrapper
 import tech.caaa.aircraft.bullets.BaseBullet
 import tech.caaa.aircraft.bullets.HeroBullet
 import tech.caaa.aircraft.common.Movable
+import tech.caaa.aircraft.items.BaseItem
+import tech.caaa.aircraft.items.BloodItem
+import tech.caaa.aircraft.items.BombItem
+import tech.caaa.aircraft.items.BulletItem
 import java.util.Timer
 import java.util.TimerTask
 import java.util.concurrent.atomic.AtomicReference
@@ -29,8 +32,8 @@ enum class Difficulty {
 // use 400 * 800 size and scale at runtime
 class Game(private val difficulty: Difficulty) {
     companion object {
-        const val baseWidth = 400F
-        const val baseHeight = 800F
+        const val baseWidth = 400.0
+        const val baseHeight = 800.0
         const val fps = 60
         const val nsPerFrame = (1e9 / fps).toLong()
     }
@@ -41,11 +44,12 @@ class Game(private val difficulty: Difficulty) {
     private val players = ArrayList<PlayerContext>()
     private val enemies = ArrayList<BaseEnemy>()
     private val enemyFactories = ArrayList<() -> List<BaseEnemy>>()
-    private val heroBullets = ArrayList<BaseBullet>()
+    private val heroBullets = ArrayList<HeroBullet>()
     private val enemyBullets = ArrayList<BaseBullet>()
+    private val items = ArrayList<BaseItem>()
 
     fun addPlayer(): PlayerContext {
-        val newHero = HeroAircraft(0F, 0F)
+        val newHero = HeroAircraft(0.0, 0.0)
         heroes.add(newHero)
         val player = PlayerContext(newHero)
         return player
@@ -58,7 +62,7 @@ class Game(private val difficulty: Difficulty) {
                 counterGenWrapper(
                     60,
                     chanceGenWrapper(
-                        0.5F,
+                        0.5,
                         randomTopGenWrapper(baseWidth, singleGenWrapper(::CommonEnemy))
                     )
                 )
@@ -103,8 +107,8 @@ class Game(private val difficulty: Difficulty) {
                 if(enemy.isDead()) continue
                 if(hero.isDead()) break
                 if(!hero.check(enemy)) continue
-                enemy.addHP(-1000F) // strong hit enemy
-                hero.addHP(-100F) // bad hit hero
+                enemy.addHP(-1000.0) // strong hit enemy
+                hero.addHP(-100.0) // bad hit hero
             }
         }
 
@@ -115,6 +119,11 @@ class Game(private val difficulty: Difficulty) {
                 if(enemy.isDead()) break
                 if(!bullet.check(enemy)) continue
                 bullet.hit(enemy)
+                if(enemy.isDead()) {
+                    val player = players.find {p -> p.controlledHero.planeId == bullet.belong.planeId}
+                    if(player != null) player.score += enemy.getScore()
+                    pendingItems.addAll(enemy.genLoot())
+                }
             }
         }
 
@@ -145,16 +154,9 @@ class Game(private val difficulty: Difficulty) {
         obj.x < 0 || obj.x > baseWidth || obj.y < 0 || obj.y > baseHeight
 
     private fun detectOutScreen() {
-        for (bullet in heroBullets) {
-            if (checkOutScreen(bullet)) {
-                bullet.onOutScreen()
-            }
-        }
-        for (bullet in enemyBullets) {
-            if (checkOutScreen(bullet)) {
-                bullet.onOutScreen()
-            }
-        }
+        for (bullet in heroBullets)  if (checkOutScreen(bullet))  bullet.onOutScreen()
+        for (bullet in enemyBullets)  if (checkOutScreen(bullet))  bullet.onOutScreen()
+        for(enemy in enemies) if(checkOutScreen(enemy)) enemy.onOutScreen()
     }
 
     private fun generateBullets() {
@@ -173,9 +175,12 @@ class Game(private val difficulty: Difficulty) {
         Log.d("Game", "hero bullet num ${heroBullets.size}")
     }
 
+    private val pendingItems = ArrayList<BaseItem>()
     private fun generateObjects() {
         generateBullets()
         generateEnemies()
+        items.addAll(pendingItems)
+        pendingItems.clear()
     }
 
     private fun updateRenderContent() {
@@ -184,6 +189,12 @@ class Game(private val difficulty: Difficulty) {
         content.addAll(heroBullets.map { bullet -> Renderable.HeroBullet(bullet.hitbox) })
         content.addAll(enemies.mapNotNull {enemy -> when(enemy){
             is CommonEnemy -> Renderable.CommonEnemy(enemy.hitbox)
+            else -> null
+        } })
+        content.addAll(items.mapNotNull{item -> when(item) {
+            is BloodItem -> Renderable.BloodItem(item.hitbox)
+            is BulletItem -> Renderable.BulletItem(item.hitbox)
+            is BombItem -> Renderable.BombItem(item.hitbox)
             else -> null
         } })
         this.renderContent = RenderContent(

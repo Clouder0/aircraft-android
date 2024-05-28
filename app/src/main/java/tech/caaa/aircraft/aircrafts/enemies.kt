@@ -1,43 +1,48 @@
 package tech.caaa.aircraft.aircrafts
 
+import tech.caaa.aircraft.items.BaseItem
+import tech.caaa.aircraft.items.BloodItem
+import tech.caaa.aircraft.items.singleWrapper
 import kotlin.random.Random
 import kotlin.random.nextUInt
 
 
 abstract class BaseEnemy(
-    x: Float,
-    y: Float,
-    var spdX: Float,
-    var spdY: Float,
-    width: Float,
-    height: Float,
-    maxHP: Float
+    x: Double,
+    y: Double,
+    var spdX: Double,
+    var spdY: Double,
+    width: Double,
+    height: Double,
+    maxHP: Double
 ) : BaseAircraft(x, y, width, height, maxHP) {
 
     override fun onOutScreen() {
         // die when out of screen
-        this.hp = 0F
+        this.hp = 0.0
     }
 
     override fun move() {
         x += spdX
         y += spdY
     }
+    abstract fun genLoot(): List<BaseItem>
+    abstract  fun getScore(): Int
 }
 
 
 typealias emptyGenerator = () -> List<BaseEnemy>
-typealias positionedGenerator = (x: Float, y: Float) -> List<BaseEnemy>
+typealias positionedGenerator = (x: Double, y: Double) -> List<BaseEnemy>
 
-fun randomTopGenWrapper(maxX: Float, inner: positionedGenerator): emptyGenerator {
+fun randomTopGenWrapper(maxX: Double, inner: positionedGenerator): emptyGenerator {
     return {
-        inner(Random.nextFloat() * maxX,20F)
+        inner(Random.nextDouble() * maxX,20.0)
     }
 }
 
-fun chanceGenWrapper(chance: Float, inner: emptyGenerator): emptyGenerator {
+fun chanceGenWrapper(chance: Double, inner: emptyGenerator): emptyGenerator {
     return {
-        if (Random.nextFloat() < chance) inner() else emptyList<BaseEnemy>()
+        if (Random.nextDouble() < chance) inner() else emptyList<BaseEnemy>()
     }
 }
 
@@ -61,14 +66,20 @@ fun counterGenWrapper(times: Int, inner: emptyGenerator): emptyGenerator {
     }
 }
 
-fun singleGenWrapper(inner: (x: Float, y: Float) -> BaseEnemy): positionedGenerator =
-    { x: Float, y: Float -> listOf(inner(x, y)) }
+fun singleGenWrapper(inner: (x: Double, y: Double) -> BaseEnemy): positionedGenerator =
+    { x: Double, y: Double -> listOf(inner(x, y)) }
 
-class CommonEnemy(x: Float, y: Float) : BaseEnemy(x, y, 0F, spdY, width, height, maxHP) {
+class CommonEnemy(x: Double, y: Double) : BaseEnemy(x, y, 0.0, spdY, width, height, maxHP) {
     companion object {
-        const val spdY = 2F
-        const val maxHP = 10F
-        const val width = 32F
-        const val height = 32F
+        const val spdY = 2.0
+        const val maxHP = 10.0
+        const val width = 32.0
+        const val height = 32.0
+    }
+
+    override fun getScore(): Int = 10
+    private val looter = tech.caaa.aircraft.items.chanceGenWrapper(0.5, singleWrapper(::BloodItem))
+    override fun genLoot():List<BaseItem> {
+        return looter(x,y)
     }
 }

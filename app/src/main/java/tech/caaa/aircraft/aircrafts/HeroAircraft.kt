@@ -7,15 +7,15 @@ import tech.caaa.aircraft.bullets.Shootable
 import kotlin.random.Random
 import kotlin.random.nextUInt
 
-const val HeroMaxHP = 1000F
+const val HeroMaxHP = 1000.0
 
-class HeroAircraft(x: Float, y: Float) : BaseAircraft(x,y, width, height, HeroMaxHP), Shootable {
+class HeroAircraft(x: Double, y: Double) : BaseAircraft(x,y, width, height, HeroMaxHP), Shootable {
     companion object {
-        const val width = 50F
-        const val height = 41F
+        const val width = 50.0
+        const val height = 41.0
     }
     val planeId = Random.nextUInt()
-    public fun setPosition(nx: Float, ny: Float) {
+    public fun setPosition(nx: Double, ny: Double) {
         this.x = nx
         this.y = ny
     }
@@ -25,10 +25,11 @@ class HeroAircraft(x: Float, y: Float) : BaseAircraft(x,y, width, height, HeroMa
 
 
     private val shooter = timedShoot(15)
-    override fun shoot() : List<BaseBullet> {
+    @Suppress("UNCHECKED_CAST")
+    override fun shoot() : List<HeroBullet> {
         return shooter() {
-            listOf(HeroBullet(10F,x,y,0F,-4F))
-        }
+            listOf(HeroBullet(10.0,x,y,0.0,-4.0, this))
+        } as List<HeroBullet>
     }
 
     override fun onOutScreen() {
