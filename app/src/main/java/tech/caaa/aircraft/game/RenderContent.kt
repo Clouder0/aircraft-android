@@ -3,7 +3,10 @@ package tech.caaa.aircraft.game
 import android.graphics.Rect
 
 sealed class Renderable {
-    class HeroAircraft(val hitbox: Rect) : Renderable()
+    abstract val hitbox: Rect
+    class HeroAircraft(override val hitbox: Rect) : Renderable()
+    class HeroBullet(override val hitbox: Rect) : Renderable()
+    class CommonEnemy(override val hitbox: Rect) : Renderable()
 }
 
 enum class Background {
@@ -14,4 +17,4 @@ enum class Background {
     HOT
 }
 
-class RenderContent(val heroes: List<Renderable.HeroAircraft>, val players: List<PlayerContext>, val background: Background)
+class RenderContent(val players: List<PlayerContext>, val contents: List<Renderable>, val background: Background)

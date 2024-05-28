@@ -70,7 +70,9 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
             canvas = holder.lockCanvas() ?: return
 
             renderBackground(canvas, content.background)
-            renderHeroes(canvas, content.heroes)
+            for(obj in content.contents) {
+                drawRenderable(canvas, obj)
+            }
 
             val paint = Paint().apply { color=Color.BLACK; textSize = 160F }
             canvas.drawText("test", 160F,160F,paint)
@@ -97,16 +99,32 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
         canvas.drawBitmap(backgroundBitmap!!, null, Rect(0,0,width, height), null)
     }
 
+    private fun idOfRenderable(r: Renderable):Int {
+        return when(r) {
+            is Renderable.CommonEnemy -> R.drawable.mob
+            is Renderable.HeroAircraft -> R.drawable.hero
+            is Renderable.HeroBullet -> R.drawable.bullet_hero
+        }
+    }
+    private val resourceMap = mutableMapOf<Int, Bitmap>()
+    private fun bitmapOfRenderable(r: Renderable): Bitmap {
+        val id = idOfRenderable(r)
+        val now = resourceMap[id]
+        if(now == null) {
+            val res = BitmapFactory.decodeResource(resources, id)
+            resourceMap[id] = res
+            return res
+        }
+        return now
+    }
+
+    private fun drawRenderable(canvas: Canvas, r:Renderable) {
+        canvas.drawBitmap(bitmapOfRenderable(r), null, scaleRect(r.hitbox), null)
+    }
+
     private fun scaleRect(src: Rect): Rect {
         return Rect((src.left * wScale).toInt(), (src.top * hScale).toInt(),
             (src.right * wScale).toInt(), (src.bottom * hScale).toInt()
         )
-    }
-
-    private val heroBitmap = BitmapFactory.decodeResource(resources, R.drawable.hero)
-    private fun renderHeroes(canvas: Canvas, heroes: List<Renderable.HeroAircraft>) {
-        for(hero in heroes) {
-            canvas.drawBitmap(heroBitmap, null, scaleRect(hero.hitbox), null)
-        }
     }
 }
