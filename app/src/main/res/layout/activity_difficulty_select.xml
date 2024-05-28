@@ -28,7 +28,7 @@
                 android:textSize="36sp" />
 
             <Button
-                android:id="@+id/button"
+                android:id="@+id/easyBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
@@ -37,7 +37,7 @@
                 />
 
             <Button
-                android:id="@+id/button2"
+                android:id="@+id/midBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
@@ -45,7 +45,7 @@
                 android:text="普通" />
 
             <Button
-                android:id="@+id/button3"
+                android:id="@+id/hardBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"

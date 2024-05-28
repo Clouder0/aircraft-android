@@ -2,7 +2,6 @@ package tech.caaa.aircraft
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.Toast
@@ -27,7 +26,7 @@ class MainActivity : AppCompatActivity() {
         val localModeBtn: Button = findViewById(R.id.localModeBtn)
         localModeBtn.setOnClickListener {
             Toast.makeText(this, "button clicked!", Toast.LENGTH_SHORT).show()
-            val intent = Intent(this, DifficultySelect::class.java)
+            val intent = Intent(this, GameActivity::class.java)
             GlobalCtx.misc_music_enabled = musicCheckbox.isChecked
             if(GlobalCtx.misc_music_enabled)
                 Toast.makeText(this, "music enabled!", Toast.LENGTH_SHORT).show()
