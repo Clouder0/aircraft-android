@@ -10,6 +10,7 @@ sealed class Renderable {
     class EnemyBullet(override val hitbox: Rect) : Renderable()
     class CommonEnemy(override val hitbox: Rect) : Renderable()
     class EliteEnemy(override val hitbox: Rect) : Renderable()
+    class BossEnemy(override val hitbox: Rect) : Renderable()
     class BloodItem(override val hitbox: Rect) : Renderable()
     class BombItem(override val hitbox: Rect) : Renderable()
     class BulletItem(override val hitbox: Rect) : Renderable()

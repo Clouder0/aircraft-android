@@ -33,3 +33,11 @@ fun combineGens(vararg args: positionedLootGen): positionedLootGen {
 
 fun singleWrapper(inner: (x: Double, y: Double) -> BaseItem): positionedLootGen =
     { x: Double, y: Double -> listOf(inner(x, y)) }
+
+fun repeatGen(k: Int, inner: positionedLootGen): positionedLootGen {
+    return fun(x: Double, y: Double): List<BaseItem> {
+        val res = ArrayList<BaseItem>()
+        repeat(k) { res.addAll(inner(x, y)) }
+        return res
+    }
+}

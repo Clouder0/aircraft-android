@@ -23,7 +23,7 @@ abstract class BaseBullet(width: Double, height: Double) : BoxedCollidable(width
         return this.dead
     }
 
-    override fun onDispose() {}
+    override var onDispose = {}
 }
 
 // regular bullet with delta speed movement

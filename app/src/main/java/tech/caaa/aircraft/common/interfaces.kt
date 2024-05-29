@@ -9,5 +9,5 @@ interface Movable {
 
 interface Disposable {
     fun isDead(): Boolean
-    fun onDispose()
+    var onDispose: () -> Unit
 }

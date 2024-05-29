@@ -5,11 +5,13 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import tech.caaa.aircraft.aircrafts.BaseEnemy
+import tech.caaa.aircraft.aircrafts.BossEnemy
 import tech.caaa.aircraft.aircrafts.CommonEnemy
 import tech.caaa.aircraft.aircrafts.EliteEnemy
 import tech.caaa.aircraft.aircrafts.HeroAircraft
 import tech.caaa.aircraft.aircrafts.chanceGenWrapper
 import tech.caaa.aircraft.aircrafts.counterGenWrapper
+import tech.caaa.aircraft.aircrafts.fixedYGenWrapper
 import tech.caaa.aircraft.aircrafts.randomTopGenWrapper
 import tech.caaa.aircraft.aircrafts.repeatGenWrapper
 import tech.caaa.aircraft.aircrafts.singleGenWrapper
@@ -227,13 +229,36 @@ class Game(private val difficulty: Difficulty) {
         for (enemy in enemies) if (enemy is Shootable) enemyBullets.addAll(enemy.shoot())
     }
 
+    private val bossFactory = fixedYGenWrapper(120.0, baseWidth, singleGenWrapper(::BossEnemy))
+    private var lastBossScore = 100
+    private var bossAlive = false
     private fun generateEnemies() {
         for (fac in enemyFactories) enemies.addAll(fac())
+        val scoreSum =
+            players.fold(0) { acc: Int, playerContext: PlayerContext -> acc + playerContext.score }
+        if (!bossAlive && scoreSum >= lastBossScore * 1.5) {
+            lastBossScore = scoreSum
+            bossAlive = true
+            val boss = bossFactory()
+            enemies.addAll(boss)
+            boss[0].onDispose = {
+                this.bossAlive = false
+                val nowScoreSum =
+                    this.players.fold(0) { acc: Int, playerContext: PlayerContext -> acc + playerContext.score }
+                this.lastBossScore = nowScoreSum
+            }
+        }
     }
 
     private fun cleanObjects() {
         userInputBuffer.clear()
         userMoveInput.clear()
+
+        heroBullets.filter { x -> x.isDead() }.forEach { x -> x.onDispose() }
+        enemyBullets.filter { x -> x.isDead() }.forEach { x -> x.onDispose() }
+        enemies.filter { x -> x.isDead() }.forEach { x -> x.onDispose() }
+        items.filter { x -> x.isDead() }.forEach { x -> x.onDispose() }
+
         heroBullets.removeIf { bullet -> bullet.isDead() }
         enemyBullets.removeIf { bullet -> bullet.isDead() }
         enemies.removeIf { enemy -> enemy.isDead() }
@@ -258,6 +283,7 @@ class Game(private val difficulty: Difficulty) {
             when (enemy) {
                 is CommonEnemy -> Renderable.CommonEnemy(enemy.hitbox)
                 is EliteEnemy -> Renderable.EliteEnemy(enemy.hitbox)
+                is BossEnemy -> Renderable.BossEnemy(enemy.hitbox)
                 else -> null
             }
         })

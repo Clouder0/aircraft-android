@@ -141,6 +141,7 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
         return when (r) {
             is Renderable.CommonEnemy -> R.drawable.mob
             is Renderable.EliteEnemy -> R.drawable.elite
+            is Renderable.BossEnemy -> R.drawable.boss
             is Renderable.HeroAircraft -> R.drawable.hero
             is Renderable.HeroBullet -> R.drawable.bullet_hero
             is Renderable.EnemyBullet -> R.drawable.bullet_enemy

@@ -19,7 +19,7 @@ abstract class BaseItem(
         return used
     }
 
-    override fun onDispose() {}
+    override var onDispose = {}
 }
 
 class BloodItem(x: Double, y: Double) : BaseItem(x, y, width, height) {

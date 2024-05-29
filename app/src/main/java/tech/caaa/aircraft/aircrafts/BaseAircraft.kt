@@ -20,7 +20,7 @@ abstract class BaseAircraft(
         return this.hp <= 0
     }
 
-    override fun onDispose() {}
+    override var onDispose = {}
     fun addHP(num: Double) {
         this.hp = max(0.0, min(this.hp + num, this.maxHP))
     }
