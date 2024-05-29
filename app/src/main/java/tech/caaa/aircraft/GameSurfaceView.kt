@@ -20,6 +20,7 @@ import kotlinx.coroutines.runBlocking
 import tech.caaa.aircraft.game.Background
 import tech.caaa.aircraft.game.Game
 import tech.caaa.aircraft.game.PlayerContext
+import tech.caaa.aircraft.game.PlayerRenderContext
 import tech.caaa.aircraft.game.RenderContent
 import tech.caaa.aircraft.game.Renderable
 import tech.caaa.aircraft.game.UserInput
@@ -31,7 +32,7 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private var gameThread: Thread? = null
     private var renderThread: Thread? = null
     private val gameInstance = Game(GlobalCtx.difficulty)
-    private val controlledPlayer = gameInstance.addPlayer("me")
+    private val controlledPlayerId = gameInstance.addPlayer("me")
 
     init {
         holder.addCallback(this)
@@ -63,7 +64,7 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
             launch {
                 gameInstance.addInput(
                     UserInput.MovePlane(
-                        controlledPlayer.controlledHero.planeId,
+                        controlledPlayerId,
                         event.x / wScale,
                         event.y / hScale
                     )
@@ -93,6 +94,7 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
                 drawRenderable(canvas, obj)
             }
             renderScores(canvas, content.players)
+            renderMyHP(canvas, content.players.find{p -> p.id == controlledPlayerId}!!)
 
         } finally {
             if (canvas != null)
@@ -117,7 +119,7 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
         canvas.drawBitmap(backgroundBitmap!!, null, Rect(0, 0, width, height), null)
     }
 
-    private fun renderScores(canvas: Canvas, allCtx: List<PlayerContext>) {
+    private fun renderScores(canvas: Canvas, allCtx: List<PlayerRenderContext>) {
         val p = Paint().apply { color=Color.WHITE; textSize = (32.0 * hScale).toFloat() }
         canvas.drawText("Score", (20 * wScale).toFloat(), (40 * hScale).toFloat(),p)
         val ps = Paint().apply { color=Color.WHITE; textSize = (24.0 * hScale).toFloat() }
@@ -125,6 +127,11 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
             canvas.drawText("${ctx.name}: ${ctx.score}", (20 * wScale).toFloat(),
                 ((80 + index * 28) * hScale).toFloat(), ps)
         }
+    }
+
+    private fun renderMyHP(canvas: Canvas, ctx: PlayerRenderContext) {
+        val p = Paint().apply { color=Color.WHITE; textSize = (24.0 * hScale).toFloat() }
+        canvas.drawText("HP:${ctx.hp}", width - (120 * wScale).toFloat(), (28 * hScale).toFloat(), p)
     }
 
     private fun idOfRenderable(r: Renderable): Int {

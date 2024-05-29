@@ -8,3 +8,7 @@ data class PlayerContext(val name: String, val controlledHero: HeroAircraft) {
     var score = 0
     val id = Random.nextUInt()
 }
+
+
+
+fun makePlayerRenderCtx(ctx: PlayerContext):PlayerRenderContext = PlayerRenderContext(ctx.name, ctx.id, ctx.controlledHero.planeId, ctx.score, ctx.controlledHero.hp.toInt())

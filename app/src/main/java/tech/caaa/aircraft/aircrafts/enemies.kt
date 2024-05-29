@@ -92,7 +92,7 @@ class CommonEnemy(x: Double, y: Double) : BaseEnemy(x, y, 0.0, spdY, width, heig
     }
 
     override fun getScore(): Int = 10
-    private val looter = chanceGenWrapper(0.5, singleWrapper(::BloodItem))
+    private val looter = chanceGenWrapper(0.2, singleWrapper(::BloodItem))
     override fun genLoot(): List<BaseItem> {
         return looter(x, y)
     }
@@ -109,9 +109,9 @@ class EliteEnemy(x: Double, y: Double) : BaseEnemy(x, y, 0.0, spdY, width, heigh
 
     override fun getScore(): Int = 30
     private val looter = combineGens(
-        chanceGenWrapper(0.3, radiusLootGen(96.0, singleWrapper(::BloodItem))),
-        chanceGenWrapper(0.3, radiusLootGen(96.0, singleWrapper(::BombItem))),
-        chanceGenWrapper(0.3, radiusLootGen(96.0, singleWrapper(::BulletItem)))
+        chanceGenWrapper(0.5, radiusLootGen(48.0, singleWrapper(::BloodItem))),
+        chanceGenWrapper(0.5, radiusLootGen(48.0, singleWrapper(::BombItem))),
+        chanceGenWrapper(0.8, radiusLootGen(48.0, singleWrapper(::BulletItem)))
     )
 
     override fun genLoot(): List<BaseItem> {

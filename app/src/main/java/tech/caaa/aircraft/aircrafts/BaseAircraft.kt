@@ -9,7 +9,7 @@ import kotlin.math.max
 
 abstract class BaseAircraft(override var x: Double, override var y: Double, width: Double, height: Double, private var maxHP: Double) : Movable, BoxedCollidable(width,height),
     Disposable {
-    protected var hp = maxHP
+    var hp = maxHP
     override fun isDead(): Boolean {  return this.hp <= 0  }
 
     override fun onDispose() {}

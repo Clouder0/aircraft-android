@@ -22,4 +22,5 @@ enum class Background {
     HOT
 }
 
-class RenderContent(val players: List<PlayerContext>, val contents: List<Renderable>, val background: Background)
+class PlayerRenderContext(val name: String, val id: UInt, val planeId: UInt, val score: Int, val hp: Int)
+class RenderContent(val players: List<PlayerRenderContext>, val contents: List<Renderable>, val background: Background)

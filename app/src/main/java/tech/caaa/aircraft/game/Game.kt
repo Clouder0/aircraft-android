@@ -43,6 +43,7 @@ class Game(private val difficulty: Difficulty) {
         const val nsPerFrame = (1e9 / fps).toLong()
     }
 
+    private var frameCnt = 0U
     private var renderContent: RenderContent? = null
     private val inputMutex = Mutex()
     private val userInputBuffer = ArrayList<UserInput>()
@@ -54,13 +55,14 @@ class Game(private val difficulty: Difficulty) {
     private val heroBullets = ArrayList<HeroBullet>()
     private val enemyBullets = ArrayList<BaseBullet>()
     private val items = ArrayList<BaseItem>()
+    private val eventManager = EventManager()
 
-    fun addPlayer(name: String): PlayerContext {
+    fun addPlayer(name: String): UInt {
         val newHero = HeroAircraft(0.0, 0.0)
         heroes.add(newHero)
         val player = PlayerContext(name, newHero)
         players.add(player)
-        return player
+        return player.id
     }
 
     init {
@@ -81,7 +83,7 @@ class Game(private val difficulty: Difficulty) {
                     counterGenWrapper(
                         180,
                         chanceGenWrapper(
-                            0.2,
+                            0.4,
                             randomTopGenWrapper(baseWidth, singleGenWrapper(::EliteEnemy))
                         )
                     )
@@ -103,23 +105,35 @@ class Game(private val difficulty: Difficulty) {
             // long time accuracy
             nextFrameTime += nsPerFrame
             Log.d("Game", "start game frame")
+            ++frameCnt
             once()
 //            }
 //            Log.d("time", measured.inWholeMicroseconds.toString())
         }
     }
 
+
+
     // execute one game loop
     private fun once() {
         runBlocking { handleInput() }
         doMoves()
         detectCollision()
+        handleEvents()
         detectOutScreen()
         cleanObjects()
         generateObjects()
         updateRenderContent()
     }
-
+    private fun handleEvents() {
+        val events = eventManager.eventsAtFrame(frameCnt)
+        for(e in events) {
+            e.callback()
+            when(e) {
+                is Event.HeroEnhanceBulletExpireEvent -> {}
+            }
+        }
+    }
     private fun detectCollision() {
         for (hero in heroes) {
             if (hero.isDead()) continue
@@ -167,6 +181,12 @@ class Game(private val difficulty: Difficulty) {
                 val ret = item.use()
                 when (item) {
                     is BloodItem -> hero.addHP(ret as Double)
+                    is BulletItem -> {
+                        hero.enhanceShoot()
+                        eventManager.registerEvent(Event.HeroEnhanceBulletExpireEvent(frameCnt + 300U){
+                            hero.enhanceShootExpired()
+                        })
+                    }
                 }
             }
         }
@@ -175,8 +195,8 @@ class Game(private val difficulty: Difficulty) {
     private suspend fun handleInput() {
         inputMutex.withLock {
             for(input in this.userMoveInput.values) {
-                val target = heroes.find { hero -> hero.planeId == input.planeId } ?: continue
-                target.setPosition(input.x, input.y)
+                val user = players.find {p -> p.id == input.playerId} ?: continue
+                user.controlledHero.setPosition(input.x, input.y)
             }
             for (input in this.userInputBuffer) {
                 when (input) {
@@ -254,7 +274,7 @@ class Game(private val difficulty: Difficulty) {
             }
         })
         this.renderContent = RenderContent(
-            players = this.players, contents = content, background = when (difficulty) {
+            players = this.players.map{ctx -> makePlayerRenderCtx(ctx)}, contents = content, background = when (difficulty) {
                 Difficulty.EASY -> Background.GRASS
                 Difficulty.MEDIUM -> Background.SKY
                 Difficulty.HARD -> Background.HOT
@@ -270,9 +290,9 @@ class Game(private val difficulty: Difficulty) {
         inputMutex.withLock {
             when(input) {
                 is UserInput.MovePlane -> {
-                    val old = this.userMoveInput[input.planeId]
+                    val old = this.userMoveInput[input.playerId]
                     if(old == null || old.created < input.created) {
-                        this.userMoveInput[input.planeId] = input
+                        this.userMoveInput[input.playerId] = input
                     }
                 }
                 else -> this.userInputBuffer.add(input)
