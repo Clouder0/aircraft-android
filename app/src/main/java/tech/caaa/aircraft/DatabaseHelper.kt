@@ -73,7 +73,4 @@ class DatabaseHelper(context: Context) :
         db.close()
         return success
     }
-
-    // Methods for update and delete can be added here...
-
 }

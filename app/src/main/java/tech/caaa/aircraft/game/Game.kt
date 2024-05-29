@@ -12,6 +12,7 @@ import tech.caaa.aircraft.aircrafts.HeroAircraft
 import tech.caaa.aircraft.aircrafts.chanceGenWrapper
 import tech.caaa.aircraft.aircrafts.counterGenWrapper
 import tech.caaa.aircraft.aircrafts.fixedYGenWrapper
+import tech.caaa.aircraft.aircrafts.incrementWrapper
 import tech.caaa.aircraft.aircrafts.randomTopGenWrapper
 import tech.caaa.aircraft.aircrafts.repeatGenWrapper
 import tech.caaa.aircraft.aircrafts.singleGenWrapper
@@ -70,7 +71,11 @@ class Game(private val difficulty: Difficulty) {
         enemyFactories.addAll(
             listOf(
                 repeatGenWrapper(
-                    5,
+                    when (difficulty) {
+                        Difficulty.EASY -> 5
+                        Difficulty.MEDIUM -> 8
+                        Difficulty.HARD -> 10
+                    },
                     counterGenWrapper(
                         60,
                         chanceGenWrapper(
@@ -80,7 +85,11 @@ class Game(private val difficulty: Difficulty) {
                     )
                 ),
                 repeatGenWrapper(
-                    3,
+                    when (difficulty) {
+                        Difficulty.EASY -> 3
+                        Difficulty.MEDIUM -> 5
+                        Difficulty.HARD -> 8
+                    },
                     counterGenWrapper(
                         180,
                         chanceGenWrapper(
@@ -191,6 +200,19 @@ class Game(private val difficulty: Difficulty) {
                             hero.enhanceShootExpired()
                         })
                     }
+
+                    is BombItem -> {
+                        for (enemy in enemies) {
+                            if (enemy.isDead()) continue
+                            enemy.addHP(-100.0)
+                            if (enemy.isDead()) {
+                                val p =
+                                    players.find { p -> p.controlledHero.planeId == hero.planeId }
+                                if (p != null) p.score += enemy.getScore()
+                                pendingItems.addAll(enemy.genLoot())
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -235,7 +257,8 @@ class Game(private val difficulty: Difficulty) {
         for (enemy in enemies) if (enemy is Shootable) enemyBullets.addAll(enemy.shoot())
     }
 
-    private val bossFactory = fixedYGenWrapper(120.0, baseWidth, singleGenWrapper(::BossEnemy))
+    private val bossFactory =
+        fixedYGenWrapper(120.0, baseWidth, singleGenWrapper(incrementWrapper(::BossEnemy)))
     private var lastBossScore = 100
     private var bossAlive = false
     private fun generateEnemies() {

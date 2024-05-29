@@ -45,21 +45,31 @@ abstract class BaseEnemy(
 }
 
 
-typealias emptyGenerator = () -> List<BaseEnemy>
-typealias positionedGenerator = (x: Double, y: Double) -> List<BaseEnemy>
+typealias emptyGenerator<T> = () -> T
+typealias positionedGenerator<T> = (x: Double, y: Double) -> T
 
-fun fixedYGenWrapper(y: Double, maxX: Double, inner: positionedGenerator): emptyGenerator {
+fun <T> fixedYGenWrapper(
+    y: Double,
+    maxX: Double,
+    inner: positionedGenerator<T>
+): emptyGenerator<T> {
     return { inner(Random.nextDouble() * maxX, y) }
 }
 
-fun randomTopGenWrapper(maxX: Double, inner: positionedGenerator): emptyGenerator {
+fun <T> randomTopGenWrapper(maxX: Double, inner: positionedGenerator<T>): emptyGenerator<T> {
     return fixedYGenWrapper(20.0, maxX, inner)
 }
 
-fun chanceGenWrapper(chance: Double, inner: emptyGenerator): emptyGenerator =
+fun chanceGenWrapper(
+    chance: Double,
+    inner: emptyGenerator<List<BaseEnemy>>
+): emptyGenerator<List<BaseEnemy>> =
     { if (Random.nextDouble() < chance) inner() else emptyList() }
 
-fun repeatGenWrapper(times: Int, inner: emptyGenerator): emptyGenerator {
+fun repeatGenWrapper(
+    times: Int,
+    inner: emptyGenerator<List<BaseEnemy>>
+): emptyGenerator<List<BaseEnemy>> {
     return fun(): List<BaseEnemy> {
         val res = ArrayList<BaseEnemy>()
         repeat(times) {
@@ -69,7 +79,10 @@ fun repeatGenWrapper(times: Int, inner: emptyGenerator): emptyGenerator {
     }
 }
 
-fun counterGenWrapper(times: Int, inner: emptyGenerator): emptyGenerator {
+fun counterGenWrapper(
+    times: Int,
+    inner: emptyGenerator<List<BaseEnemy>>
+): emptyGenerator<List<BaseEnemy>> {
     var now = 0
     return fun(): List<BaseEnemy> {
         now++
@@ -79,8 +92,18 @@ fun counterGenWrapper(times: Int, inner: emptyGenerator): emptyGenerator {
     }
 }
 
-fun singleGenWrapper(inner: (x: Double, y: Double) -> BaseEnemy): positionedGenerator =
+fun <T> singleGenWrapper(inner: (x: Double, y: Double) -> T): positionedGenerator<List<T>> =
     { x: Double, y: Double -> listOf(inner(x, y)) }
+
+
+fun <T> incrementWrapper(inner: (times: Int, x: Double, y: Double) -> T): positionedGenerator<T> {
+    var times = 0
+    return fun(x: Double, y: Double): T {
+        ++times
+        return inner(times, x, y)
+    }
+}
+
 
 class CommonEnemy(x: Double, y: Double) : BaseEnemy(x, y, 0.0, spdY, width, height, maxHP) {
     companion object {
@@ -125,7 +148,8 @@ class EliteEnemy(x: Double, y: Double) : BaseEnemy(x, y, 0.0, spdY, width, heigh
     }
 }
 
-class BossEnemy(x: Double, y: Double) : BaseEnemy(x, y, 2.0, 0.0, width, height, maxHP), Shootable {
+class BossEnemy(private val times: Int, x: Double, y: Double) :
+    BaseEnemy(x, y, 2.0, 0.0, width, height, maxHP + 200 * times), Shootable {
     companion object {
         const val maxHP = 400.0
         const val width = 160.0
@@ -159,8 +183,9 @@ class BossEnemy(x: Double, y: Double) : BaseEnemy(x, y, 2.0, 0.0, width, height,
     }
 
     private val shooter =
-        ::EnemyBullet.curry(30.0).singleRegularShootWrap().linearShoot(3.0).circleShoot(12, 120.0)
-            .timedShoot(120)
+        ::EnemyBullet.curry(30.0).singleRegularShootWrap().linearShoot(3.0)
+            .circleShoot(12 + 4 * times, 120.0)
+            .timedShoot(90)
 
     override fun shoot(): List<BaseBullet> {
         return shooter(x, y)
