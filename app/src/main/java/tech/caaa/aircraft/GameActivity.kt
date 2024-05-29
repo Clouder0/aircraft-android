@@ -18,9 +18,5 @@ class GameActivity : AppCompatActivity() {
             insets
         }
         val displayMetrics = resources.displayMetrics
-        val height = displayMetrics.heightPixels
-        val width = displayMetrics.widthPixels
-        val gameView: GameSurfaceView = findViewById(R.id.gameView)
-//        gameView.layoutParams = ViewGroup.LayoutParams(width - 100, height - 200)
     }
 }

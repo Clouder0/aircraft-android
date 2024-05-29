@@ -62,6 +62,10 @@ class Game(private val difficulty: Difficulty) {
         return player.id
     }
 
+    fun getPlayerScore(id: UInt): Int {
+        return players.find { p -> p.id == id }?.score ?: -1
+    }
+
     init {
         enemyFactories.addAll(
             listOf(
@@ -92,7 +96,7 @@ class Game(private val difficulty: Difficulty) {
     fun run() {
 
         var nextFrameTime = System.nanoTime()
-        while (true) {
+        while (!gameOver) {
 //            val measured = measureTime {
             // spin until time reached
             var nowTime = System.nanoTime()
@@ -112,6 +116,8 @@ class Game(private val difficulty: Difficulty) {
 
     // execute one game loop
     private fun once() {
+        gameOverCheck()
+        if (gameOver) return
         runBlocking { handleInput() }
         doMoves()
         detectCollision()
@@ -324,5 +330,20 @@ class Game(private val difficulty: Difficulty) {
             }
             Unit
         }
+    }
+
+    private var gameOver = false
+    private val onGameOver = ArrayList<() -> Unit>()
+    private fun gameOverCheck() {
+        if (gameOver) return
+        if (players.all { p -> p.controlledHero.isDead() }) {
+            // game over! damn it!
+            gameOver = true
+            onGameOver.forEach { x -> x() }
+        }
+    }
+
+    fun registerOnGameOver(callback: () -> Unit) {
+        this.onGameOver.add(callback)
     }
 }

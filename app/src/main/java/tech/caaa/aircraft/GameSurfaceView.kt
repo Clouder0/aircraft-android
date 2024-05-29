@@ -1,13 +1,17 @@
 package tech.caaa.aircraft
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.SurfaceHolder
@@ -28,13 +32,25 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private var gameThread: Thread? = null
     private var renderThread: Thread? = null
     private val gameInstance = Game(GlobalCtx.difficulty)
-    private val controlledPlayerId = gameInstance.addPlayer("me")
+    private val controlledPlayerId = gameInstance.addPlayer(GlobalCtx.username)
 
     init {
         holder.addCallback(this)
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
+        this.gameInstance.registerOnGameOver {
+            Handler(Looper.getMainLooper()).post {
+                Handler(Looper.getMainLooper()).post {
+                    if (context is Activity) {
+                        val intent = Intent(context, EndActivity::class.java)
+                        intent.putExtra("score", gameInstance.getPlayerScore(controlledPlayerId))
+                        context.startActivity(intent)
+                        (context as Activity).finish()  // Finish the current activity
+                    }
+                }
+            }
+        }
         gameThread = thread(start = true) { this.gameInstance.run() }
         renderThread = thread(start = true) {
             val source = { this.gameInstance.getRenderContent() }
