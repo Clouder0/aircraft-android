@@ -13,7 +13,7 @@ fun getHitbox(x: Double, y: Double, width: Double, height: Double): Rect {
 abstract class BoxedCollidable(private val width: Double, private val height: Double) {
     abstract val x: Double
     abstract val y: Double
-    public fun check(other: BoxedCollidable): Boolean {
+    fun check(other: BoxedCollidable): Boolean {
         val hitbox = getHitbox(x, y, width, height)
         val hitboxOthers = getHitbox(other.x, other.y, other.width, other.height)
         return hitbox.intersects(

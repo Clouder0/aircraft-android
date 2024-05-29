@@ -1,7 +1,6 @@
 package tech.caaa.aircraft.aircrafts
 
 import tech.caaa.aircraft.aircrafts.shoot.linearShoot
-import tech.caaa.aircraft.aircrafts.shoot.shootFunc
 import tech.caaa.aircraft.aircrafts.shoot.singleRegularShootWrap
 import tech.caaa.aircraft.aircrafts.shoot.timedShoot
 import tech.caaa.aircraft.bullets.BaseBullet
@@ -17,7 +16,6 @@ import tech.caaa.aircraft.items.combineGens
 import tech.caaa.aircraft.items.radiusLootGen
 import tech.caaa.aircraft.items.singleWrapper
 import kotlin.random.Random
-import kotlin.random.nextUInt
 
 
 abstract class BaseEnemy(

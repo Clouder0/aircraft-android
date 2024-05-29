@@ -1,9 +1,6 @@
 package tech.caaa.aircraft
 
 import android.os.Bundle
-import android.util.DisplayMetrics
-import android.view.ViewGroup
-import android.view.WindowManager
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -23,7 +20,7 @@ class GameActivity : AppCompatActivity() {
         val displayMetrics = resources.displayMetrics
         val height = displayMetrics.heightPixels
         val width = displayMetrics.widthPixels
-        val gameView:GameSurfaceView = findViewById(R.id.gameView)
+        val gameView: GameSurfaceView = findViewById(R.id.gameView)
 //        gameView.layoutParams = ViewGroup.LayoutParams(width - 100, height - 200)
     }
 }

@@ -21,11 +21,6 @@ import tech.caaa.aircraft.items.BaseItem
 import tech.caaa.aircraft.items.BloodItem
 import tech.caaa.aircraft.items.BombItem
 import tech.caaa.aircraft.items.BulletItem
-import java.util.Timer
-import java.util.TimerTask
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.concurrent.timerTask
-import kotlin.time.measureTime
 
 
 enum class Difficulty {
@@ -113,7 +108,6 @@ class Game(private val difficulty: Difficulty) {
     }
 
 
-
     // execute one game loop
     private fun once() {
         runBlocking { handleInput() }
@@ -125,15 +119,17 @@ class Game(private val difficulty: Difficulty) {
         generateObjects()
         updateRenderContent()
     }
+
     private fun handleEvents() {
         val events = eventManager.eventsAtFrame(frameCnt)
-        for(e in events) {
+        for (e in events) {
             e.callback()
-            when(e) {
+            when (e) {
                 is Event.HeroEnhanceBulletExpireEvent -> {}
             }
         }
     }
+
     private fun detectCollision() {
         for (hero in heroes) {
             if (hero.isDead()) continue
@@ -162,11 +158,11 @@ class Game(private val difficulty: Difficulty) {
             }
         }
 
-        for(hero in heroes) {
-            if(hero.isDead()) continue
-            for(bullet in enemyBullets) {
-                if(bullet.isDead()) continue
-                if(hero.isDead()) break
+        for (hero in heroes) {
+            if (hero.isDead()) continue
+            for (bullet in enemyBullets) {
+                if (bullet.isDead()) continue
+                if (hero.isDead()) break
                 if (!bullet.check(hero)) continue
                 bullet.hit(hero)
             }
@@ -183,7 +179,7 @@ class Game(private val difficulty: Difficulty) {
                     is BloodItem -> hero.addHP(ret as Double)
                     is BulletItem -> {
                         hero.enhanceShoot()
-                        eventManager.registerEvent(Event.HeroEnhanceBulletExpireEvent(frameCnt + 300U){
+                        eventManager.registerEvent(Event.HeroEnhanceBulletExpireEvent(frameCnt + 300U) {
                             hero.enhanceShootExpired()
                         })
                     }
@@ -194,8 +190,8 @@ class Game(private val difficulty: Difficulty) {
 
     private suspend fun handleInput() {
         inputMutex.withLock {
-            for(input in this.userMoveInput.values) {
-                val user = players.find {p -> p.id == input.playerId} ?: continue
+            for (input in this.userMoveInput.values) {
+                val user = players.find { p -> p.id == input.playerId } ?: continue
                 user.controlledHero.setPosition(input.x, input.y)
             }
             for (input in this.userInputBuffer) {
@@ -228,7 +224,7 @@ class Game(private val difficulty: Difficulty) {
 
     private fun generateBullets() {
         for (hero in heroes) heroBullets.addAll(hero.shoot())
-        for(enemy in enemies) if(enemy is Shootable) enemyBullets.addAll(enemy.shoot())
+        for (enemy in enemies) if (enemy is Shootable) enemyBullets.addAll(enemy.shoot())
     }
 
     private fun generateEnemies() {
@@ -274,7 +270,9 @@ class Game(private val difficulty: Difficulty) {
             }
         })
         this.renderContent = RenderContent(
-            players = this.players.map{ctx -> makePlayerRenderCtx(ctx)}, contents = content, background = when (difficulty) {
+            players = this.players.map { ctx -> makePlayerRenderCtx(ctx) },
+            contents = content,
+            background = when (difficulty) {
                 Difficulty.EASY -> Background.GRASS
                 Difficulty.MEDIUM -> Background.SKY
                 Difficulty.HARD -> Background.HOT
@@ -288,13 +286,14 @@ class Game(private val difficulty: Difficulty) {
 
     suspend fun addInput(input: UserInput) {
         inputMutex.withLock {
-            when(input) {
+            when (input) {
                 is UserInput.MovePlane -> {
                     val old = this.userMoveInput[input.playerId]
-                    if(old == null || old.created < input.created) {
+                    if (old == null || old.created < input.created) {
                         this.userMoveInput[input.playerId] = input
                     }
                 }
+
                 else -> this.userInputBuffer.add(input)
             }
             Unit

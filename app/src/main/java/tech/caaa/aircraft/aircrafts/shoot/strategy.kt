@@ -1,6 +1,5 @@
 package tech.caaa.aircraft.aircrafts.shoot
 
-import android.util.Log
 import tech.caaa.aircraft.bullets.BaseBullet
 import kotlin.math.cos
 import kotlin.math.sin

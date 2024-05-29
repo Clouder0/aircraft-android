@@ -4,6 +4,7 @@ import android.graphics.Rect
 
 sealed class Renderable {
     abstract val hitbox: Rect
+
     class HeroAircraft(override val hitbox: Rect) : Renderable()
     class HeroBullet(override val hitbox: Rect) : Renderable()
     class EnemyBullet(override val hitbox: Rect) : Renderable()
@@ -22,5 +23,16 @@ enum class Background {
     HOT
 }
 
-class PlayerRenderContext(val name: String, val id: UInt, val planeId: UInt, val score: Int, val hp: Int)
-class RenderContent(val players: List<PlayerRenderContext>, val contents: List<Renderable>, val background: Background)
+class PlayerRenderContext(
+    val name: String,
+    val id: UInt,
+    val planeId: UInt,
+    val score: Int,
+    val hp: Int
+)
+
+class RenderContent(
+    val players: List<PlayerRenderContext>,
+    val contents: List<Renderable>,
+    val background: Background
+)

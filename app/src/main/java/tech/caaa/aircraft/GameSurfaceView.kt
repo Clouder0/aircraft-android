@@ -1,8 +1,6 @@
 package tech.caaa.aircraft
 
 import android.annotation.SuppressLint
-import android.view.SurfaceHolder
-import android.view.SurfaceView
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -12,14 +10,12 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.MotionEvent
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
+import android.view.SurfaceHolder
+import android.view.SurfaceView
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import tech.caaa.aircraft.game.Background
 import tech.caaa.aircraft.game.Game
-import tech.caaa.aircraft.game.PlayerContext
 import tech.caaa.aircraft.game.PlayerRenderContext
 import tech.caaa.aircraft.game.RenderContent
 import tech.caaa.aircraft.game.Renderable
@@ -78,7 +74,7 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private fun renderThread(holder: SurfaceHolder, contentSource: () -> RenderContent?) {
         while (true) {
             val content = contentSource() ?: continue
-            if(lastRendered?.equals(content)  == true)  continue
+            if (lastRendered?.equals(content) == true) continue
             lastRendered = content
             renderOnce(holder, content)
         }
@@ -94,7 +90,7 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
                 drawRenderable(canvas, obj)
             }
             renderScores(canvas, content.players)
-            renderMyHP(canvas, content.players.find{p -> p.id == controlledPlayerId}!!)
+            renderMyHP(canvas, content.players.find { p -> p.id == controlledPlayerId }!!)
 
         } finally {
             if (canvas != null)
@@ -120,18 +116,25 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
     }
 
     private fun renderScores(canvas: Canvas, allCtx: List<PlayerRenderContext>) {
-        val p = Paint().apply { color=Color.WHITE; textSize = (32.0 * hScale).toFloat() }
-        canvas.drawText("Score", (20 * wScale).toFloat(), (40 * hScale).toFloat(),p)
-        val ps = Paint().apply { color=Color.WHITE; textSize = (24.0 * hScale).toFloat() }
+        val p = Paint().apply { color = Color.WHITE; textSize = (32.0 * hScale).toFloat() }
+        canvas.drawText("Score", (20 * wScale).toFloat(), (40 * hScale).toFloat(), p)
+        val ps = Paint().apply { color = Color.WHITE; textSize = (24.0 * hScale).toFloat() }
         allCtx.forEachIndexed { index, ctx ->
-            canvas.drawText("${ctx.name}: ${ctx.score}", (20 * wScale).toFloat(),
-                ((80 + index * 28) * hScale).toFloat(), ps)
+            canvas.drawText(
+                "${ctx.name}: ${ctx.score}", (20 * wScale).toFloat(),
+                ((80 + index * 28) * hScale).toFloat(), ps
+            )
         }
     }
 
     private fun renderMyHP(canvas: Canvas, ctx: PlayerRenderContext) {
-        val p = Paint().apply { color=Color.WHITE; textSize = (24.0 * hScale).toFloat() }
-        canvas.drawText("HP:${ctx.hp}", width - (120 * wScale).toFloat(), (28 * hScale).toFloat(), p)
+        val p = Paint().apply { color = Color.WHITE; textSize = (24.0 * hScale).toFloat() }
+        canvas.drawText(
+            "HP:${ctx.hp}",
+            width - (120 * wScale).toFloat(),
+            (28 * hScale).toFloat(),
+            p
+        )
     }
 
     private fun idOfRenderable(r: Renderable): Int {

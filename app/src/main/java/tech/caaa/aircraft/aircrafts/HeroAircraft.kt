@@ -4,11 +4,9 @@ import tech.caaa.aircraft.aircrafts.shoot.circleShoot
 import tech.caaa.aircraft.aircrafts.shoot.linearShoot
 import tech.caaa.aircraft.aircrafts.shoot.singleRegularShootWrap
 import tech.caaa.aircraft.aircrafts.shoot.timedShoot
-import tech.caaa.aircraft.bullets.BaseBullet
 import tech.caaa.aircraft.bullets.HeroBullet
 import tech.caaa.aircraft.bullets.Shootable
 import tech.caaa.aircraft.common.curry
-import tech.caaa.aircraft.game.Event
 import kotlin.random.Random
 import kotlin.random.nextUInt
 
@@ -21,7 +19,7 @@ class HeroAircraft(x: Double, y: Double) : BaseAircraft(x, y, width, height, Her
     }
 
     val planeId = Random.nextUInt()
-    public fun setPosition(nx: Double, ny: Double) {
+    fun setPosition(nx: Double, ny: Double) {
         this.x = nx
         this.y = ny
     }
@@ -49,10 +47,10 @@ class HeroAircraft(x: Double, y: Double) : BaseAircraft(x, y, width, height, Her
 
     private var currentEnhanceLevel: EnhanceLevel = EnhanceLevel.ORIGIN
     fun enhanceShoot() {
-        currentEnhanceLevel = when(currentEnhanceLevel) {
+        currentEnhanceLevel = when (currentEnhanceLevel) {
             EnhanceLevel.ORIGIN -> EnhanceLevel.FASTER
             EnhanceLevel.FASTER -> EnhanceLevel.CIRCLE(1)
-            is EnhanceLevel.CIRCLE ->  EnhanceLevel.CIRCLE((currentEnhanceLevel as EnhanceLevel.CIRCLE).level + 1)
+            is EnhanceLevel.CIRCLE -> EnhanceLevel.CIRCLE((currentEnhanceLevel as EnhanceLevel.CIRCLE).level + 1)
         }
         updateShootStrategy()
     }

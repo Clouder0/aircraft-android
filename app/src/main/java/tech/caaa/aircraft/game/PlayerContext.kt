@@ -10,5 +10,10 @@ data class PlayerContext(val name: String, val controlledHero: HeroAircraft) {
 }
 
 
-
-fun makePlayerRenderCtx(ctx: PlayerContext):PlayerRenderContext = PlayerRenderContext(ctx.name, ctx.id, ctx.controlledHero.planeId, ctx.score, ctx.controlledHero.hp.toInt())
+fun makePlayerRenderCtx(ctx: PlayerContext): PlayerRenderContext = PlayerRenderContext(
+    ctx.name,
+    ctx.id,
+    ctx.controlledHero.planeId,
+    ctx.score,
+    ctx.controlledHero.hp.toInt()
+)
