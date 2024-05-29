@@ -27,7 +27,19 @@ abstract class RegularBullet(override var x: Double, override var y: Double, var
     }
 }
 
-class HeroBullet(private val damage: Double, x: Double, y: Double, spdX: Double, spdY: Double, val belong: HeroAircraft) : RegularBullet(x,y,spdX,spdY, width, height) {
+class HeroBullet(val belong: HeroAircraft,private val damage: Double, x: Double, y: Double, spdX: Double, spdY: Double) : RegularBullet(x,y,spdX,spdY, width, height) {
+    companion object {
+        const val width = 12.0
+        const val height = 12.0
+    }
+
+    override fun hit(other: BaseAircraft) {
+        other.addHP(-damage)
+        dead = true
+    }
+}
+
+class EnemyBullet(private val damage: Double, x: Double, y: Double, spdX: Double, spdY: Double): RegularBullet(x,y,spdX,spdY,width,height) {
     companion object {
         const val width = 12.0
         const val height = 12.0

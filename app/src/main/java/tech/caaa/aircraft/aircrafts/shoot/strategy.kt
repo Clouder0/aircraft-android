@@ -3,20 +3,33 @@ package tech.caaa.aircraft.aircrafts.shoot
 import android.util.Log
 import tech.caaa.aircraft.bullets.BaseBullet
 
-typealias shootFunc = () -> List<BaseBullet>
+typealias shootFunc = (x: Double, y: Double) -> List<BaseBullet>
 typealias regularShootFunc = (x: Double, y: Double, spdX: Double, spdY: Double) -> List<BaseBullet>
+typealias singleRegularShootFunc = (x: Double, y: Double, spdX: Double, spdY: Double) -> BaseBullet
 
 
 // shoot per <period> ticks
-fun timedShoot(target: Int): (() -> List<BaseBullet>) -> List<BaseBullet> {
+fun shootFunc.timedShoot(target: Int): shootFunc {
     var nowTick = 0
-    val res = fun(callback: () -> List<BaseBullet>): List<BaseBullet>{
+    val res = fun(x: Double, y: Double): List<BaseBullet>{
         ++nowTick
         if(nowTick >= target) {
             nowTick = 0
-            return callback()
+            return this(x,y)
         }
         return emptyList()
     }
     return res
+}
+
+fun regularShootFunc.linearShoot(spdY: Double): shootFunc {
+    return fun(x:Double, y: Double): List<BaseBullet> {
+        return this(x,y,0.0,spdY)
+    }
+}
+
+fun singleRegularShootFunc.singleRegularShootWrap(): regularShootFunc {
+    return {
+        x:Double,y:Double,spdX:Double,spdY:Double -> listOf(this(x,y,spdX,spdY))
+    }
 }

@@ -100,8 +100,10 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private fun idOfRenderable(r: Renderable):Int {
         return when(r) {
             is Renderable.CommonEnemy -> R.drawable.mob
+            is Renderable.EliteEnemy -> R.drawable.elite
             is Renderable.HeroAircraft -> R.drawable.hero
             is Renderable.HeroBullet -> R.drawable.bullet_hero
+            is Renderable.EnemyBullet -> R.drawable.bullet_enemy
             is Renderable.BloodItem -> R.drawable.prop_blood
             is Renderable.BombItem -> R.drawable.prop_bomb
             is Renderable.BulletItem -> R.drawable.prop_bullet

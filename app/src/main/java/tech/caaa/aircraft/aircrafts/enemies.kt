@@ -1,7 +1,18 @@
 package tech.caaa.aircraft.aircrafts
 
+import tech.caaa.aircraft.aircrafts.shoot.linearShoot
+import tech.caaa.aircraft.aircrafts.shoot.shootFunc
+import tech.caaa.aircraft.aircrafts.shoot.singleRegularShootWrap
+import tech.caaa.aircraft.aircrafts.shoot.timedShoot
+import tech.caaa.aircraft.bullets.BaseBullet
+import tech.caaa.aircraft.bullets.EnemyBullet
+import tech.caaa.aircraft.bullets.Shootable
+import tech.caaa.aircraft.common.curry
 import tech.caaa.aircraft.items.BaseItem
 import tech.caaa.aircraft.items.BloodItem
+import tech.caaa.aircraft.items.chanceGenWrapper
+import tech.caaa.aircraft.items.combineGens
+import tech.caaa.aircraft.items.radiusLootGen
 import tech.caaa.aircraft.items.singleWrapper
 import kotlin.random.Random
 import kotlin.random.nextUInt
@@ -26,8 +37,9 @@ abstract class BaseEnemy(
         x += spdX
         y += spdY
     }
+
     abstract fun genLoot(): List<BaseItem>
-    abstract  fun getScore(): Int
+    abstract fun getScore(): Int
 }
 
 
@@ -36,7 +48,7 @@ typealias positionedGenerator = (x: Double, y: Double) -> List<BaseEnemy>
 
 fun randomTopGenWrapper(maxX: Double, inner: positionedGenerator): emptyGenerator {
     return {
-        inner(Random.nextDouble() * maxX,20.0)
+        inner(Random.nextDouble() * maxX, 20.0)
     }
 }
 
@@ -78,8 +90,34 @@ class CommonEnemy(x: Double, y: Double) : BaseEnemy(x, y, 0.0, spdY, width, heig
     }
 
     override fun getScore(): Int = 10
-    private val looter = tech.caaa.aircraft.items.chanceGenWrapper(0.5, singleWrapper(::BloodItem))
-    override fun genLoot():List<BaseItem> {
-        return looter(x,y)
+    private val looter = chanceGenWrapper(0.5, singleWrapper(::BloodItem))
+    override fun genLoot(): List<BaseItem> {
+        return looter(x, y)
+    }
+}
+
+class EliteEnemy(x: Double, y: Double) : BaseEnemy(x, y, 0.0, spdY, width, height, maxHP),
+    Shootable {
+    companion object {
+        const val spdY = 1.5
+        const val maxHP = 20.0
+        const val width = 48.0
+        const val height = 48.0
+    }
+
+    override fun getScore(): Int = 30
+    private val looter = combineGens(
+        chanceGenWrapper(0.5, radiusLootGen(16.0, singleWrapper(::BloodItem)))
+    )
+
+    override fun genLoot(): List<BaseItem> {
+        return looter(x, y)
+    }
+
+    private val shooter =
+        ::EnemyBullet.curry(10.0).singleRegularShootWrap().linearShoot(spdY + 1.0).timedShoot(60)
+
+    override fun shoot(): List<BaseBullet> {
+        return shooter(x, y)
     }
 }
