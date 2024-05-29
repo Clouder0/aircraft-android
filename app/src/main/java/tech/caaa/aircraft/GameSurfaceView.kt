@@ -12,27 +12,35 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.MotionEvent
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import tech.caaa.aircraft.game.Background
 import tech.caaa.aircraft.game.Game
+import tech.caaa.aircraft.game.PlayerContext
 import tech.caaa.aircraft.game.RenderContent
 import tech.caaa.aircraft.game.Renderable
 import tech.caaa.aircraft.game.UserInput
 import kotlin.concurrent.thread
 
-class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(context, attrs), SurfaceHolder.Callback {
+class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(context, attrs),
+    SurfaceHolder.Callback {
 
     private var gameThread: Thread? = null
     private var renderThread: Thread? = null
     private val gameInstance = Game(GlobalCtx.difficulty)
-    private val controlledPlayer = gameInstance.addPlayer()
+    private val controlledPlayer = gameInstance.addPlayer("me")
+
     init {
         holder.addCallback(this)
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
-        gameThread = thread (start = true){ this.gameInstance.run() }
-        renderThread = thread(start = true){
-            val source = { this.gameInstance.getRenderContent()}
+        gameThread = thread(start = true) { this.gameInstance.run() }
+        renderThread = thread(start = true) {
+            val source = { this.gameInstance.getRenderContent() }
             this.renderThread(holder, source)
         }
     }
@@ -50,17 +58,28 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        if(event == null) return true
-        this.gameInstance.addInput(UserInput.MovePlane(controlledPlayer.controlledHero.planeId, event.x / wScale,event.y / hScale))
+        if (event == null) return true
+        runBlocking<Unit> {
+            launch {
+                gameInstance.addInput(
+                    UserInput.MovePlane(
+                        controlledPlayer.controlledHero.planeId,
+                        event.x / wScale,
+                        event.y / hScale
+                    )
+                )
+            }
+        }
         return true
     }
 
+    private var lastRendered: RenderContent? = null
     private fun renderThread(holder: SurfaceHolder, contentSource: () -> RenderContent?) {
         while (true) {
-            val content = contentSource()
-            if(content != null)
-                renderOnce(holder, content)
-            Thread.sleep(10)
+            val content = contentSource() ?: continue
+            if(lastRendered?.equals(content)  == true)  continue
+            lastRendered = content
+            renderOnce(holder, content)
         }
     }
 
@@ -70,12 +89,13 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
             canvas = holder.lockCanvas() ?: return
 
             renderBackground(canvas, content.background)
-            for(obj in content.contents) {
+            for (obj in content.contents) {
                 drawRenderable(canvas, obj)
             }
+            renderScores(canvas, content.players)
 
         } finally {
-            if(canvas != null)
+            if (canvas != null)
                 holder.unlockCanvasAndPost(canvas)
         }
     }
@@ -83,9 +103,9 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
     private var loadedBackground: Background? = null
     private var backgroundBitmap: Bitmap? = null
     private fun renderBackground(canvas: Canvas, background: Background) {
-        if(loadedBackground != background) {
+        if (loadedBackground != background) {
             loadedBackground = background
-            val bgResource = when(background) {
+            val bgResource = when (background) {
                 Background.GRASS -> R.drawable.bg
                 Background.SKY -> R.drawable.bg2
                 Background.MOUNTAIN -> R.drawable.bg3
@@ -94,11 +114,21 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
             }
             backgroundBitmap = BitmapFactory.decodeResource(resources, bgResource)
         }
-        canvas.drawBitmap(backgroundBitmap!!, null, Rect(0,0,width, height), null)
+        canvas.drawBitmap(backgroundBitmap!!, null, Rect(0, 0, width, height), null)
     }
 
-    private fun idOfRenderable(r: Renderable):Int {
-        return when(r) {
+    private fun renderScores(canvas: Canvas, allCtx: List<PlayerContext>) {
+        val p = Paint().apply { color=Color.WHITE; textSize = (32.0 * hScale).toFloat() }
+        canvas.drawText("Score", (20 * wScale).toFloat(), (40 * hScale).toFloat(),p)
+        val ps = Paint().apply { color=Color.WHITE; textSize = (24.0 * hScale).toFloat() }
+        allCtx.forEachIndexed { index, ctx ->
+            canvas.drawText("${ctx.name}: ${ctx.score}", (20 * wScale).toFloat(),
+                ((80 + index * 28) * hScale).toFloat(), ps)
+        }
+    }
+
+    private fun idOfRenderable(r: Renderable): Int {
+        return when (r) {
             is Renderable.CommonEnemy -> R.drawable.mob
             is Renderable.EliteEnemy -> R.drawable.elite
             is Renderable.HeroAircraft -> R.drawable.hero
@@ -109,11 +139,12 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
             is Renderable.BulletItem -> R.drawable.prop_bullet
         }
     }
+
     private val resourceMap = mutableMapOf<Int, Bitmap>()
     private fun bitmapOfRenderable(r: Renderable): Bitmap {
         val id = idOfRenderable(r)
         val now = resourceMap[id]
-        if(now == null) {
+        if (now == null) {
             val res = BitmapFactory.decodeResource(resources, id)
             resourceMap[id] = res
             return res
@@ -121,12 +152,13 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
         return now
     }
 
-    private fun drawRenderable(canvas: Canvas, r:Renderable) {
+    private fun drawRenderable(canvas: Canvas, r: Renderable) {
         canvas.drawBitmap(bitmapOfRenderable(r), null, scaleRect(r.hitbox), null)
     }
 
     private fun scaleRect(src: Rect): Rect {
-        return Rect((src.left * wScale).toInt(), (src.top * hScale).toInt(),
+        return Rect(
+            (src.left * wScale).toInt(), (src.top * hScale).toInt(),
             (src.right * wScale).toInt(), (src.bottom * hScale).toInt()
         )
     }

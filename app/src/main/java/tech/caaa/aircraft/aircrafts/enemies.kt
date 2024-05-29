@@ -10,6 +10,8 @@ import tech.caaa.aircraft.bullets.Shootable
 import tech.caaa.aircraft.common.curry
 import tech.caaa.aircraft.items.BaseItem
 import tech.caaa.aircraft.items.BloodItem
+import tech.caaa.aircraft.items.BombItem
+import tech.caaa.aircraft.items.BulletItem
 import tech.caaa.aircraft.items.chanceGenWrapper
 import tech.caaa.aircraft.items.combineGens
 import tech.caaa.aircraft.items.radiusLootGen
@@ -107,7 +109,9 @@ class EliteEnemy(x: Double, y: Double) : BaseEnemy(x, y, 0.0, spdY, width, heigh
 
     override fun getScore(): Int = 30
     private val looter = combineGens(
-        chanceGenWrapper(0.5, radiusLootGen(16.0, singleWrapper(::BloodItem)))
+        chanceGenWrapper(0.3, radiusLootGen(96.0, singleWrapper(::BloodItem))),
+        chanceGenWrapper(0.3, radiusLootGen(96.0, singleWrapper(::BombItem))),
+        chanceGenWrapper(0.3, radiusLootGen(96.0, singleWrapper(::BulletItem)))
     )
 
     override fun genLoot(): List<BaseItem> {

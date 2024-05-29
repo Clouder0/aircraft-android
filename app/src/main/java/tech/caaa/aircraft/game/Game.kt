@@ -1,6 +1,9 @@
 package tech.caaa.aircraft.game
 
 import android.util.Log
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import tech.caaa.aircraft.aircrafts.BaseEnemy
 import tech.caaa.aircraft.aircrafts.CommonEnemy
 import tech.caaa.aircraft.aircrafts.EliteEnemy
@@ -41,7 +44,9 @@ class Game(private val difficulty: Difficulty) {
     }
 
     private var renderContent: RenderContent? = null
+    private val inputMutex = Mutex()
     private val userInputBuffer = ArrayList<UserInput>()
+    private val userMoveInput = mutableMapOf<UInt, UserInput.MovePlane>()
     private val heroes = ArrayList<HeroAircraft>()
     private val players = ArrayList<PlayerContext>()
     private val enemies = ArrayList<BaseEnemy>()
@@ -50,10 +55,11 @@ class Game(private val difficulty: Difficulty) {
     private val enemyBullets = ArrayList<BaseBullet>()
     private val items = ArrayList<BaseItem>()
 
-    fun addPlayer(): PlayerContext {
+    fun addPlayer(name: String): PlayerContext {
         val newHero = HeroAircraft(0.0, 0.0)
         heroes.add(newHero)
-        val player = PlayerContext(newHero)
+        val player = PlayerContext(name, newHero)
+        players.add(player)
         return player
     }
 
@@ -105,7 +111,7 @@ class Game(private val difficulty: Difficulty) {
 
     // execute one game loop
     private fun once() {
-        handleInput()
+        runBlocking { handleInput() }
         doMoves()
         detectCollision()
         detectOutScreen()
@@ -166,15 +172,19 @@ class Game(private val difficulty: Difficulty) {
         }
     }
 
-    private fun handleInput() {
-        for (input in this.userInputBuffer) {
-            when (input) {
-                is UserInput.HoldShoot -> {
-                }
+    private suspend fun handleInput() {
+        inputMutex.withLock {
+            for(input in this.userMoveInput.values) {
+                val target = heroes.find { hero -> hero.planeId == input.planeId } ?: continue
+                target.setPosition(input.x, input.y)
+            }
+            for (input in this.userInputBuffer) {
+                when (input) {
+                    is UserInput.HoldShoot -> {
+                    }
 
-                is UserInput.MovePlane -> {
-                    val target = heroes.find { hero -> hero.planeId == input.planeId } ?: continue
-                    target.setPosition(input.x, input.y)
+                    is UserInput.MovePlane -> {
+                    }
                 }
             }
         }
@@ -207,6 +217,7 @@ class Game(private val difficulty: Difficulty) {
 
     private fun cleanObjects() {
         userInputBuffer.clear()
+        userMoveInput.clear()
         heroBullets.removeIf { bullet -> bullet.isDead() }
         enemyBullets.removeIf { bullet -> bullet.isDead() }
         enemies.removeIf { enemy -> enemy.isDead() }
@@ -255,7 +266,18 @@ class Game(private val difficulty: Difficulty) {
         return this.renderContent
     }
 
-    fun addInput(input: UserInput) {
-        this.userInputBuffer.add(input)
+    suspend fun addInput(input: UserInput) {
+        inputMutex.withLock {
+            when(input) {
+                is UserInput.MovePlane -> {
+                    val old = this.userMoveInput[input.planeId]
+                    if(old == null || old.created < input.created) {
+                        this.userMoveInput[input.planeId] = input
+                    }
+                }
+                else -> this.userInputBuffer.add(input)
+            }
+            Unit
+        }
     }
 }
