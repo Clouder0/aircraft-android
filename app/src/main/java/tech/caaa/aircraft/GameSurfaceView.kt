@@ -10,6 +10,9 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
+import android.media.AudioAttributes
+import android.media.MediaPlayer
+import android.media.SoundPool
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
@@ -31,20 +34,45 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
 
     private var gameThread: Thread? = null
     private var renderThread: Thread? = null
-    private val gameInstance = Game(GlobalCtx.difficulty)
-    private val controlledPlayerId = gameInstance.addPlayer(GlobalCtx.username)
+    private lateinit var gameInstance: Game
+    private var controlledPlayerId: UInt? = null
 
     init {
         holder.addCallback(this)
     }
 
+    private lateinit var soundPool: SoundPool
     override fun surfaceCreated(holder: SurfaceHolder) {
+
+        var audioHelper: AndroidAudio? = null
+        if (GlobalCtx.misc_music_enabled) {
+            val audioAttributes = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+
+            soundPool = SoundPool.Builder()
+                .setMaxStreams(10)
+                .setAudioAttributes(audioAttributes)
+                .build()
+            val createMediaPlayer = { x: Int -> MediaPlayer.create(context, x) }
+            audioHelper = AndroidAudio(createMediaPlayer, soundPool) { x: Int ->
+                soundPool.load(
+                    context,
+                    x,
+                    1
+                )
+            }
+        }
+
+        gameInstance = Game(GlobalCtx.difficulty, audioHelper)
+        controlledPlayerId = gameInstance.addPlayer(GlobalCtx.username)
         this.gameInstance.registerOnGameOver {
             Handler(Looper.getMainLooper()).post {
                 Handler(Looper.getMainLooper()).post {
                     if (context is Activity) {
                         val intent = Intent(context, EndActivity::class.java)
-                        intent.putExtra("score", gameInstance.getPlayerScore(controlledPlayerId))
+                        intent.putExtra("score", gameInstance.getPlayerScore(controlledPlayerId!!))
                         context.startActivity(intent)
                         (context as Activity).finish()  // Finish the current activity
                     }
@@ -76,7 +104,7 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
             launch {
                 gameInstance.addInput(
                     UserInput.MovePlane(
-                        controlledPlayerId,
+                        controlledPlayerId!!,
                         event.x / wScale,
                         event.y / hScale
                     )

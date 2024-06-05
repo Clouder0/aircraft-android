@@ -33,7 +33,7 @@ enum class Difficulty {
 }
 
 // use 400 * 800 size and scale at runtime
-class Game(private val difficulty: Difficulty) {
+class Game(private val difficulty: Difficulty, private val audioHelper: MusicHelper?) {
     companion object {
         const val baseWidth = 400.0
         const val baseHeight = 800.0
@@ -66,6 +66,8 @@ class Game(private val difficulty: Difficulty) {
     fun getPlayerScore(id: UInt): Int {
         return players.find { p -> p.id == id }?.score ?: -1
     }
+
+    private val background_music = audioHelper?.playLong(LongMusicResource.BGM)
 
     init {
         enemyFactories.addAll(
@@ -166,6 +168,7 @@ class Game(private val difficulty: Difficulty) {
                 if (enemy.isDead()) break
                 if (!bullet.check(enemy)) continue
                 bullet.hit(enemy)
+                audioHelper?.playShort(ShortMusicResource.BULLET_HIT)
                 if (enemy.isDead()) {
                     val player =
                         players.find { p -> p.controlledHero.planeId == bullet.belong.planeId }
@@ -182,6 +185,7 @@ class Game(private val difficulty: Difficulty) {
                 if (hero.isDead()) break
                 if (!bullet.check(hero)) continue
                 bullet.hit(hero)
+                audioHelper?.playShort(ShortMusicResource.BULLET_HIT)
             }
         }
 
@@ -192,6 +196,7 @@ class Game(private val difficulty: Difficulty) {
                 if (hero.isDead()) break
                 if (!item.check(hero)) continue
                 val ret = item.use()
+                audioHelper?.playShort(ShortMusicResource.GET_SUPPLY)
                 when (item) {
                     is BloodItem -> hero.addHP(ret as Double)
                     is BulletItem -> {
@@ -202,6 +207,7 @@ class Game(private val difficulty: Difficulty) {
                     }
 
                     is BombItem -> {
+                        audioHelper?.playShort(ShortMusicResource.BOMB_EXPLOSION)
                         for (enemy in enemies) {
                             if (enemy.isDead()) continue
                             enemy.addHP(-100.0)
@@ -261,6 +267,7 @@ class Game(private val difficulty: Difficulty) {
         fixedYGenWrapper(120.0, baseWidth, singleGenWrapper(incrementWrapper(::BossEnemy)))
     private var lastBossScore = 100
     private var bossAlive = false
+    private var bossAudio: UInt? = null
     private fun generateEnemies() {
         for (fac in enemyFactories) enemies.addAll(fac())
         val scoreSum =
@@ -270,11 +277,15 @@ class Game(private val difficulty: Difficulty) {
             bossAlive = true
             val boss = bossFactory()
             enemies.addAll(boss)
+            audioHelper?.pauseLong(background_music!!)
+            bossAudio = audioHelper?.playLong(LongMusicResource.BGM_BOSS)
             boss[0].onDispose = {
                 this.bossAlive = false
                 val nowScoreSum =
                     this.players.fold(0) { acc: Int, playerContext: PlayerContext -> acc + playerContext.score }
                 this.lastBossScore = nowScoreSum
+                audioHelper?.pauseLong(bossAudio!!)
+                audioHelper?.resumeLong(background_music!!)
             }
         }
     }
@@ -363,6 +374,8 @@ class Game(private val difficulty: Difficulty) {
             // game over! damn it!
             gameOver = true
             onGameOver.forEach { x -> x() }
+            audioHelper?.pauseLong(background_music!!)
+            audioHelper?.playShort(ShortMusicResource.GAME_OVER)
         }
     }
 
