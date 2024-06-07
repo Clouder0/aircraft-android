@@ -14,10 +14,20 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import tech.caaa.aircraft.game.Difficulty
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+
+
+fun dif2int(difficulty: Difficulty): Int {
+    return when(GlobalCtx.difficulty){
+        Difficulty.EASY -> 1
+        Difficulty.MEDIUM -> 2
+        Difficulty.HARD -> 3
+    }
+}
 
 class EndActivity : AppCompatActivity() {
     private lateinit var dataList: MutableList<ScoreRecord>
@@ -36,12 +46,18 @@ class EndActivity : AppCompatActivity() {
         returnBtn.setOnClickListener {
             this.finish()
         }
+        val scoreTextView = findViewById<TextView>(R.id.titleTextView)
+        scoreTextView.text = when(GlobalCtx.difficulty) {
+            Difficulty.EASY -> "EASY"
+            Difficulty.MEDIUM -> "MEDIUM"
+            Difficulty.HARD -> "HARD"
+        }
         val rankListView = findViewById<ListView>(R.id.rankListView)
         databaseHelper = DatabaseHelper(this)
         val current_score = intent.getIntExtra("score", -1)
         if (current_score == -1) throw Exception("Current user score not found!")
-        databaseHelper.addRecord(GlobalCtx.username, current_score, System.currentTimeMillis())
-        dataList = databaseHelper.getAllDataModels().toMutableList()
+        databaseHelper.addRecord(GlobalCtx.username, current_score, System.currentTimeMillis(), dif2int(GlobalCtx.difficulty))
+        dataList = databaseHelper.getAllDataModels(dif2int(GlobalCtx.difficulty)).toMutableList()
         rankAdapter = RankAdapter(this, dataList)
         rankListView.adapter = rankAdapter
         rankListView.setOnItemLongClickListener { parent, view, position, id ->
