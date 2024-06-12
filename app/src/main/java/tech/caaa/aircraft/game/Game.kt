@@ -1,6 +1,7 @@
 package tech.caaa.aircraft.game
 
 import android.util.Log
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -232,8 +233,6 @@ class Game(private val difficulty: Difficulty, private val audioHelper: MusicHel
             }
             for (input in this.userInputBuffer) {
                 when (input) {
-                    is UserInput.HoldShoot -> {
-                    }
 
                     is UserInput.MovePlane -> {
                     }
@@ -259,7 +258,7 @@ class Game(private val difficulty: Difficulty, private val audioHelper: MusicHel
     }
 
     private fun generateBullets() {
-        for (hero in heroes) heroBullets.addAll(hero.shoot())
+        for (hero in heroes) if(!hero.isDead()) heroBullets.addAll(hero.shoot())
         for (enemy in enemies) if (enemy is Shootable) enemyBullets.addAll(enemy.shoot())
     }
 
@@ -335,19 +334,26 @@ class Game(private val difficulty: Difficulty, private val audioHelper: MusicHel
                 else -> null
             }
         })
-        this.renderContent = RenderContent(
-            players = this.players.map { ctx -> makePlayerRenderCtx(ctx) },
-            contents = content,
-            background = when (difficulty) {
-                Difficulty.EASY -> Background.GRASS
-                Difficulty.MEDIUM -> Background.SKY
-                Difficulty.HARD -> Background.HOT
+        runBlocking {
+            renderMtx.withLock {
+                renderContent = RenderContent(
+                    players = players.map { ctx -> makePlayerRenderCtx(ctx) },
+                    contents = content,
+                    background = when (difficulty) {
+                        Difficulty.EASY -> Background.GRASS
+                        Difficulty.MEDIUM -> Background.SKY
+                        Difficulty.HARD -> Background.HOT
+                    }
+                )
             }
-        )
-    }
+        }
 
-    fun getRenderContent(): RenderContent? {
-        return this.renderContent
+    }
+    private val renderMtx = Mutex()
+    suspend fun getRenderContent(): RenderContent? {
+        renderMtx.withLock {
+            return this.renderContent
+        }
     }
 
     suspend fun addInput(input: UserInput) {

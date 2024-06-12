@@ -24,6 +24,7 @@ import kotlinx.coroutines.runBlocking
 import tech.caaa.aircraft.game.Background
 import tech.caaa.aircraft.game.Game
 import tech.caaa.aircraft.game.PlayerRenderContext
+import tech.caaa.aircraft.game.Rectangle
 import tech.caaa.aircraft.game.RenderContent
 import tech.caaa.aircraft.game.Renderable
 import tech.caaa.aircraft.game.UserInput
@@ -32,58 +33,31 @@ import kotlin.concurrent.thread
 class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(context, attrs),
     SurfaceHolder.Callback {
 
-    private var gameThread: Thread? = null
     private var renderThread: Thread? = null
-    private lateinit var gameInstance: Game
-    private var controlledPlayerId: UInt? = null
+    private var playerId: UInt? = null
+    private lateinit var renderGetter: () -> RenderContent?
+    private lateinit var inputCallback: (UserInput) -> Unit
+    var running = false
+    fun init(playerId: UInt, renderGetter: () -> RenderContent?, inputCallback: (UserInput)->Unit) {
+        this.playerId = playerId
+        this.renderGetter = renderGetter
+        this.inputCallback = inputCallback
+        if(GlobalCtx.serverGameServer != null) {
+            thread {GlobalCtx.serverGameServer!!.run()}
+        }
+        if(GlobalCtx.clientGameClient != null) {
+            thread {GlobalCtx.clientGameClient!!.run()}
+        }
+        renderThread = thread(start = true) {
+            this.renderThread(holder)
+        }
+    }
 
     init {
         holder.addCallback(this)
     }
 
-    private lateinit var soundPool: SoundPool
     override fun surfaceCreated(holder: SurfaceHolder) {
-
-        var audioHelper: AndroidAudio? = null
-        if (GlobalCtx.misc_music_enabled) {
-            val audioAttributes = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_MEDIA)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .build()
-
-            soundPool = SoundPool.Builder()
-                .setMaxStreams(10)
-                .setAudioAttributes(audioAttributes)
-                .build()
-            val createMediaPlayer = { x: Int -> MediaPlayer.create(context, x) }
-            audioHelper = AndroidAudio(createMediaPlayer, soundPool) { x: Int ->
-                soundPool.load(
-                    context,
-                    x,
-                    1
-                )
-            }
-        }
-
-        gameInstance = Game(GlobalCtx.difficulty, audioHelper)
-        controlledPlayerId = gameInstance.addPlayer(GlobalCtx.username)
-        this.gameInstance.registerOnGameOver {
-            Handler(Looper.getMainLooper()).post {
-                Handler(Looper.getMainLooper()).post {
-                    if (context is Activity) {
-                        val intent = Intent(context, EndActivity::class.java)
-                        intent.putExtra("score", gameInstance.getPlayerScore(controlledPlayerId!!))
-                        context.startActivity(intent)
-                        (context as Activity).finish()  // Finish the current activity
-                    }
-                }
-            }
-        }
-        gameThread = thread(start = true) { this.gameInstance.run() }
-        renderThread = thread(start = true) {
-            val source = { this.gameInstance.getRenderContent() }
-            this.renderThread(holder, source)
-        }
     }
 
     var wScale = width / Game.baseWidth
@@ -99,25 +73,22 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent?): Boolean {
+        if(!running) return true
         if (event == null) return true
-        runBlocking<Unit> {
-            launch {
-                gameInstance.addInput(
-                    UserInput.MovePlane(
-                        controlledPlayerId!!,
-                        event.x / wScale,
-                        event.y / hScale
-                    )
-                )
-            }
-        }
+        inputCallback(
+            UserInput.MovePlane(
+                playerId!!,
+                event.x / wScale,
+                event.y / hScale
+            )
+        )
         return true
     }
 
     private var lastRendered: RenderContent? = null
-    private fun renderThread(holder: SurfaceHolder, contentSource: () -> RenderContent?) {
-        while (true) {
-            val content = contentSource() ?: continue
+    private fun renderThread(holder: SurfaceHolder) {
+        while (running) {
+            val content = this.renderGetter() ?: continue
             if (lastRendered?.equals(content) == true) continue
             lastRendered = content
             renderOnce(holder, content)
@@ -134,7 +105,7 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
                 drawRenderable(canvas, obj)
             }
             renderScores(canvas, content.players)
-            renderMyHP(canvas, content.players.find { p -> p.id == controlledPlayerId }!!)
+            renderMyHP(canvas, content.players.find { p -> p.id == playerId }!!)
 
         } finally {
             if (canvas != null)
@@ -208,11 +179,15 @@ class GameSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(conte
     }
 
     private fun drawRenderable(canvas: Canvas, r: Renderable) {
-        canvas.drawBitmap(bitmapOfRenderable(r), null, scaleRect(r.hitbox), null)
+        canvas.drawBitmap(bitmapOfRenderable(r), null, rectangle2Rect(scaleRectangle(r.hitbox)), null)
     }
 
-    private fun scaleRect(src: Rect): Rect {
-        return Rect(
+    private fun rectangle2Rect(r: Rectangle): Rect {
+        return Rect(r.left,r.top,r.right,r.bottom)
+    }
+
+    private fun scaleRectangle(src: Rectangle): Rectangle {
+        return Rectangle(
             (src.left * wScale).toInt(), (src.top * hScale).toInt(),
             (src.right * wScale).toInt(), (src.bottom * hScale).toInt()
         )

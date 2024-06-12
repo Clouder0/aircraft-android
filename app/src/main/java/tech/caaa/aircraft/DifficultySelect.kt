@@ -23,22 +23,22 @@ class DifficultySelect : AppCompatActivity() {
         val easyMode: Button = findViewById(R.id.easyBtn)
         easyMode.setOnClickListener {
             GlobalCtx.difficulty = Difficulty.EASY
-            val intent = Intent(this, GameActivity::class.java)
-            startActivity(intent)
+//            val intent = Intent(this, GameActivity::class.java)
+//            startActivity(intent)
             this.finish()
         }
         val mediumMode: Button = findViewById(R.id.midBtn)
         mediumMode.setOnClickListener {
             GlobalCtx.difficulty = Difficulty.MEDIUM
-            val intent = Intent(this, GameActivity::class.java)
-            startActivity(intent)
+//            val intent = Intent(this, GameActivity::class.java)
+//            startActivity(intent)
             this.finish()
         }
         val hardMode: Button = findViewById(R.id.hardBtn)
         hardMode.setOnClickListener {
             GlobalCtx.difficulty = Difficulty.HARD
-            val intent = Intent(this, GameActivity::class.java)
-            startActivity(intent)
+//            val intent = Intent(this, GameActivity::class.java)
+//            startActivity(intent)
             this.finish()
         }
     }

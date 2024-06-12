@@ -22,13 +22,35 @@
             android:orientation="vertical"
             >
 
+
+            <EditText
+                android:id="@+id/nameEdit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:autofillHints="text"
+                android:ems="10"
+                android:inputType="text"
+                android:text="Name"
+                android:textColor="#FFFFFF" />
+
             <Button
                 android:id="@+id/localModeBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:clickable="true"
                 android:text="@string/localModeBtnText" />
-
+            <Button
+                android:id="@+id/remoteServerBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:text="多人游戏(Server)" />
+            <Button
+                android:id="@+id/remoteClientBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:text="多人游戏(Client)" />
             <CheckBox
                 android:id="@+id/musicCheckBox"
                 android:layout_width="wrap_content"
@@ -37,5 +59,6 @@
                 android:textColor="@color/white"
                 app:layout_constraintTop_toTopOf="parent" />
         </LinearLayout>
+
     </RelativeLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
