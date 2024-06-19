@@ -30,9 +30,12 @@ class ServerGameActivity : AppCompatActivity() {
             Handler(Looper.getMainLooper()).post {
                 Handler(Looper.getMainLooper()).post {
                     GlobalCtx.serverGameServer!!.stop()
-                    val intent = Intent(this, EndActivity::class.java)
-                    intent.putExtra("score", gameInstance.getPlayerScore(GlobalCtx.serverControlledPlayer!!))
-                    intent.putExtra("score_other", gameInstance.getPlayerScore(GlobalCtx.serverOtherControlledPlayer!!))
+                    val intent = Intent(this, MultiplayerEndActivity::class.java)
+                    val your_score = gameInstance.getPlayerScore(GlobalCtx.serverControlledPlayer!!)
+                    val other_score = gameInstance.getPlayerScore(GlobalCtx.serverOtherControlledPlayer!!)
+                    intent.putExtra("win", your_score > other_score)
+                    intent.putExtra("your_score", your_score)
+                    intent.putExtra("other_score", other_score)
                     this.startActivity(intent)
                     (this as Activity).finish()  // Finish the current activity
                 }

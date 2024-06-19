@@ -11,6 +11,7 @@ import java.net.InetAddress
 
 class GameClient(
     var renderCallback: ((RenderContent) -> Unit)?,
+    var finishCallback: ((win: Boolean, your_score: Int, other_score: Int) -> Unit)? = null,
     private val remote: String,
     private val port: Int
 ) {
@@ -45,7 +46,13 @@ class GameClient(
             while (running) {
                 val packet = DatagramPacket(renderBuffer, renderBuffer.size)
                 socket.receive(packet)
-                renderCallback?.invoke(deserializeFromBytes(packet.data))
+                val renderContent = deserializeFromBytes<RenderContent>(packet.data)
+                renderCallback?.invoke(renderContent)
+                if(renderContent.players.all { it.hp <= 0 }) {
+                    val your_score = renderContent.players.find { it.id == controlledPlayerId }?.score ?: 0
+                    val other_score = renderContent.players.find { it.id != controlledPlayerId }?.score ?: 0
+                    finishCallback?.invoke(your_score > other_score, your_score, other_score)
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()

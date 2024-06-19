@@ -1,6 +1,10 @@
 package tech.caaa.aircraft
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -30,6 +34,18 @@ class ClientGameActivity : AppCompatActivity() {
             insets
         }
         val gameView: GameSurfaceView = findViewById(R.id.clientGameView)
+        GlobalCtx.clientGameClient!!.finishCallback = { win, your, other->
+            Handler(Looper.getMainLooper()).post {
+                Handler(Looper.getMainLooper()).post {
+                    val intent = Intent(this, MultiplayerEndActivity::class.java)
+                    intent.putExtra("win", win)
+                    intent.putExtra("your_score", your)
+                    intent.putExtra("other_score", other)
+                    this.startActivity(intent)
+                    (this as Activity).finish()  // Finish the current activity
+                }
+            }
+        }
         GlobalCtx.clientGameClient!!.renderCallback = { content ->
             runBlocking { launch{setRenderContent(content)} }
         }

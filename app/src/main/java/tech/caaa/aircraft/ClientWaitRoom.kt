@@ -30,7 +30,7 @@ class ClientWaitRoom : AppCompatActivity() {
         val enterBtn: Button = findViewById(R.id.enterBtn)
         enterBtn.setOnClickListener {
             thread {
-                val client = GameClient(null, textEdit.text.toString(), 11451)
+                val client = GameClient(null, null, textEdit.text.toString(), 11451)
                 val id = client.registerPlayer(GlobalCtx.username)
                 GlobalCtx.clientGameClient = client
                 GlobalCtx.clientControlledId = id
